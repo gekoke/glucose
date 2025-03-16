@@ -2,7 +2,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from .env import read_env_or_raise
 
-_connection_string = read_env_or_raise("GLUCOSE_POSTGRES_CONNECTION_STRING")
+_connection_string = read_env_or_raise("GLUCOSE_POSTGRES_CONNECTION_STRING").replace("postgres://", "postgresql://")
 
 
 def _engine():
