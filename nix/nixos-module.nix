@@ -24,32 +24,32 @@
               default = 18133;
               description = "The port to run Glucose on";
             };
-            postgresConnectionString = lib.mkOption {
-              type = lib.types.str;
-              description = "The connection string for the PostgreSQL connection";
-            };
             user = lib.mkOption {
               type = lib.types.str;
               default = "glucose";
               description = "The user for the Glucose service";
             };
-          };
-
-          config = lib.mkIf config.services.glucose.enable {
-            users.users."${config.services.glucose.user}".isNormalUser = true;
-            systemd.services.glucose = {
-              wantedBy = [ "multi-user.target" ];
-              environment.GLUCOSE_POSTGRES_CONNECTION_STRING = config.services.glucose.postgresConnectionString;
-              serviceConfig = {
-                User = config.services.glucose.user;
-                ExecStart =
-                  let
-                    inherit (config.services.glucose) port;
-                  in
-                  "${glucose}/bin/fastapi run --port ${toString port} ${glucose}/lib/python3.12/site-packages/glucose/main.py";
-              };
+            environmentFile = lib.mkOption {
+              type = lib.types.path;
+              description = "Path to the systemd environment file for the service";
             };
           };
+
+          config =
+            let
+              cfg = config.services.glucose;
+            in
+            lib.mkIf cfg.enable {
+              users.users."${cfg.user}".isNormalUser = true;
+              systemd.services.glucose = {
+                wantedBy = [ "multi-user.target" ];
+                serviceConfig = {
+                  EnvironmentFile = cfg.environmentFile;
+                  User = cfg.user;
+                  ExecStart = "${glucose}/bin/fastapi run --port ${toString cfg.port} ${glucose}/lib/python3.12/site-packages/glucose/main.py";
+                };
+              };
+            };
         };
     };
   };
